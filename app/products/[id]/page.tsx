@@ -1,16 +1,21 @@
 "use client"
 
-import React, { useState } from "react"
-import { Header } from "@/components/layout/header"
+import React, { useState, useEffect } from "react"
+import { Header } from "@/components/layout/header-optimized"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw } from "lucide-react"
+import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus } from "lucide-react"
 import Link from "next/link"
-import { useProduct } from "@/lib/hooks/use-products"
-import { useCart } from "@/lib/hooks/use-cart"
+import { useRouter } from "next/navigation"
+import { useProduct } from "@/lib/hooks/use-products-optimized"
+import { useApp } from "@/lib/context/app-context-optimized"
+import { cn } from "@/lib/utils"
+import { AddToCartDialog } from "@/components/products/add-to-cart-dialog"
+import { ProductCard } from "@/components/products/product-card-optimized"
+import { useToast } from "@/hooks/use-toast"
 
 interface ProductDetailPageProps {
   params: Promise<{
@@ -21,9 +26,39 @@ interface ProductDetailPageProps {
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { id } = React.use(params)
   const { product, relatedProducts, loading } = useProduct(id)
-  const { addToCart, isInCart, getItemQuantity, updateQuantity } = useCart()
+  const { state, addToCart, getCartItemQuantity, updateCartQuantity } = useApp()
+  const router = useRouter()
+  const { toast } = useToast()
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
+  const [isAddToCartOpen, setIsAddToCartOpen] = useState(false)
+  const [currentQuantity, setCurrentQuantity] = useState(0)
+
+  useEffect(() => {
+    if (product) {
+      setCurrentQuantity(getCartItemQuantity(product.id));
+    }
+  }, [product, getCartItemQuantity, state.cart.items]);
+
+  const handleConfirmAddToCart = () => {
+    if (!product) return;
+    
+    const currentQuantity = getCartItemQuantity(product.id);
+    if (currentQuantity > 0) {
+      updateCartQuantity(product.id, currentQuantity + quantity)
+      toast({
+        title: "Cart Updated!",
+        description: `${product.name} quantity updated to ${currentQuantity + quantity}`,
+      })
+    } else {
+      addToCart(product, quantity)
+      toast({
+        title: "Added to Cart!",
+        description: `${quantity} ${quantity === 1 ? 'item' : 'items'} of ${product.name} added to your cart`,
+      })
+    }
+    setIsAddToCartOpen(false)
+  }
 
   if (loading) {
     return (
@@ -70,26 +105,34 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     )
   }
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity)
-  }
-
-  const currentQuantity = getItemQuantity(product.id)
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-1">
-        {/* Breadcrumb */}
+        {/* Back Button and Breadcrumb */}
         <div className="bg-card py-4">
           <div className="container mx-auto px-4">
+            <div className="flex items-center mb-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => window.history.back()}
+                className="mr-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+                <span className="ml-2">Back</span>
+              </Button>
+            </div>
             <nav className="text-sm text-muted">
-              <Link href="/" className="hover:text-accent">
+              <Link href="/" className="hover:text-[#0066cc]">
                 Home
               </Link>
               <span className="mx-2">/</span>
-              <Link href="/products" className="hover:text-accent">
+              <Link href="/products" className="hover:text-[#0066cc]">
                 Products
               </Link>
               <span className="mx-2">/</span>
@@ -98,16 +141,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
+        <div className="container max-w-6xl mx-auto px-4 py-8">
           {/* Product Details */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             {/* Product Images */}
             <div className="space-y-4">
-              <div className="aspect-square bg-muted/20 rounded-lg overflow-hidden">
+              <div className="max-w-2xl mx-auto aspect-square bg-muted/20 rounded-lg overflow-hidden">
                 <img
                   src={product.images[selectedImageIndex] || "/placeholder.svg"}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
               <div className="flex gap-2 overflow-x-auto">
@@ -116,7 +159,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
                     className={`flex-shrink-0 w-20 h-20 rounded border-2 overflow-hidden ${
-                      selectedImageIndex === index ? "border-accent" : "border-border"
+                      selectedImageIndex === index ? "border-[#0066cc]" : "border-border"
                     }`}
                   >
                     <img
@@ -149,24 +192,39 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 <p className="text-muted leading-relaxed">{product.description}</p>
               </div>
 
-              <div className="flex items-center gap-4">
-                <span className="font-serif font-black text-3xl text-foreground">${product.price}</span>
+              <div className="flex items-baseline gap-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-semibold text-foreground">${product.price.toFixed(2)}</span>
+                  {product.originalPrice && (
+                    <span className="text-base text-muted-foreground line-through">
+                      ${product.originalPrice.toFixed(2)}
+                    </span>
+                  )}
+                </div>
                 {product.originalPrice && (
-                  <>
-                    <span className="text-muted line-through text-xl">${product.originalPrice}</span>
-                    <Badge className="bg-accent text-accent-foreground">
-                      Save ${(product.originalPrice - product.price).toFixed(2)}
-                    </Badge>
-                  </>
+                  <Badge variant="secondary" className="ml-2 bg-orange-500/10 text-orange-600 hover:bg-orange-500/20">
+                    {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                  </Badge>
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {product.tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
-                    {tag}
-                  </Badge>
-                ))}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <span className="text-sm font-medium">{product.rating}</span>
+                </div>
+                <span className="text-sm text-muted-foreground">•</span>
+                <span className="text-sm text-muted-foreground">{product.reviewCount} reviews</span>
+                {product.tags.length > 0 && (
+                  <>
+                    <span className="text-sm text-muted-foreground">•</span>
+                    {product.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </>
+                )}
               </div>
 
               <Separator />
@@ -175,16 +233,25 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center border rounded">
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-2 hover:bg-muted">
-                      -
-                    </button>
-                    <span className="px-4 py-2 border-x">{quantity}</span>
-                    <button
-                      onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
                       className="px-3 py-2 hover:bg-muted"
                     >
-                      +
-                    </button>
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="px-6 py-2 border-x text-center min-w-[4rem]">{quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                      disabled={quantity >= product.stockQuantity}
+                      className="px-3 py-2 hover:bg-muted"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
                   <span className="text-sm text-muted">
                     {product.stockQuantity} available
@@ -195,12 +262,15 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 <div className="flex gap-4">
                   <Button
                     size="lg"
-                    className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
-                    onClick={handleAddToCart}
-                    disabled={!product.inStock}
+                    className="flex-1 bg-[#0066cc] text-white hover:bg-[#0066cc]/90"
+                    onClick={() => setIsAddToCartOpen(true)}
+                    disabled={!product.inStock || quantity <= 0}
                   >
                     <ShoppingCart className="h-5 w-5 mr-2" />
-                    {!product.inStock ? "Out of Stock" : "Add to Cart"}
+                    {!product.inStock 
+                      ? "Out of Stock" 
+                      : "Add to Cart"
+                    }
                   </Button>
                   <Button size="lg" variant="outline">
                     <Heart className="h-5 w-5" />
@@ -210,13 +280,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   </Button>
                 </div>
 
-                {currentQuantity > 0 && (
-                  <div className="p-4 bg-accent/10 rounded-lg">
-                    <p className="text-sm text-accent font-medium">
-                      {currentQuantity} item{currentQuantity !== 1 ? "s" : ""} in your cart
-                    </p>
-                  </div>
-                )}
+                {/* Add to Cart Dialog */}
+                <AddToCartDialog
+                  product={product}
+                  quantity={quantity}
+                  isOpen={isAddToCartOpen}
+                  onClose={() => setIsAddToCartOpen(false)}
+                  onConfirm={handleConfirmAddToCart}
+                  onQuantityChange={setQuantity}
+                  currentQuantity={currentQuantity}
+                />
               </div>
 
               <Separator />
@@ -224,21 +297,21 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               {/* Features */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex items-center gap-3">
-                  <Truck className="h-5 w-5 text-accent" />
+                  <Truck className="h-5 w-5 text-[#0066cc]" />
                   <div>
                     <p className="font-medium text-sm">Free Shipping</p>
                     <p className="text-xs text-muted">On orders over $50</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-accent" />
+                  <Shield className="h-5 w-5 text-[#0066cc]" />
                   <div>
                     <p className="font-medium text-sm">Secure Payment</p>
                     <p className="text-xs text-muted">100% protected</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <RotateCcw className="h-5 w-5 text-accent" />
+                  <RotateCcw className="h-5 w-5 text-[#0066cc]" />
                   <div>
                     <p className="font-medium text-sm">Easy Returns</p>
                     <p className="text-xs text-muted">30-day policy</p>
@@ -254,33 +327,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               <h2 className="font-serif font-black text-2xl text-foreground mb-6">Related Products</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {relatedProducts.map((relatedProduct) => (
-                  <Card key={relatedProduct.id} className="group hover:shadow-lg transition-shadow duration-300">
-                    <CardContent className="p-0">
-                      <Link href={`/products/${relatedProduct.id}`}>
-                        <div className="aspect-square bg-muted/20 rounded-t-lg mb-4 overflow-hidden cursor-pointer">
-                          <img
-                            src={relatedProduct.images[0] || "/placeholder.svg"}
-                            alt={relatedProduct.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      </Link>
-                      <div className="p-4">
-                        <Link href={`/products/${relatedProduct.id}`}>
-                          <h3 className="font-serif font-semibold text-foreground mb-2 hover:text-accent transition-colors cursor-pointer">
-                            {relatedProduct.name}
-                          </h3>
-                        </Link>
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-foreground">${relatedProduct.price}</span>
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                            <span className="text-sm text-muted">{relatedProduct.rating}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <ProductCard key={relatedProduct.id} product={relatedProduct} />
                 ))}
               </div>
             </section>

@@ -14,15 +14,13 @@ import { useToast } from "@/hooks/use-toast"
 
 interface ProductCardProps {
   product: Product
-  variant?: "default" | "compact" | "featured"
-  showActions?: boolean
+  variant?: "default" | "compact"
   className?: string
 }
 
 export function ProductCard({ 
   product, 
   variant = "default",
-  showActions = true,
   className 
 }: ProductCardProps) {
   const { addToCart, isInCart, addToWishlist, removeFromWishlist, isInWishlist } = useApp()
@@ -49,27 +47,17 @@ export function ProductCard({
     }
   }
 
-  const isFeatured = variant === "featured"
-  const isCompact = variant === "compact"
-
   return (
     <Card 
       className={cn(
         "group relative overflow-hidden transition-all duration-300 hover:shadow-lg",
-        isFeatured && "p-0 bg-card",
         className
       )}
     >
       <Link href={`/products/${product.id}`} className="block h-full">
-        <CardContent className={cn(
-          "p-0 h-full flex flex-col",
-          isFeatured && "space-y-4"
-        )}>
+        <CardContent className="p-0 h-full flex flex-col">
           {/* Image Section */}
-          <div className={cn(
-            "relative aspect-square overflow-hidden bg-muted/20",
-            isFeatured && "rounded-t-lg"
-          )}>
+          <div className="relative aspect-square overflow-hidden bg-muted/20">
             <Image
               src={product.images[0] || "/placeholder.svg"}
               alt={product.name}
@@ -90,20 +78,14 @@ export function ProductCard({
           </div>
 
           {/* Content Section */}
-          <div className={cn(
-            "p-4 flex-1 flex flex-col",
-            isCompact && "p-2"
-          )}>
+          <div className="p-4 flex-1 flex flex-col">
             {/* Category */}
             <Badge variant="secondary" className="mb-2 text-xs uppercase w-fit bg-gray-100 text-gray-600 hover:bg-gray-100">
               {product.category}
             </Badge>
 
             {/* Title */}
-            <h3 className={cn(
-              "font-medium text-foreground mb-3 line-clamp-1",
-              isFeatured && "font-serif font-semibold text-lg"
-            )}>
+            <h3 className="font-medium text-foreground mb-3 line-clamp-1">
               {product.name}
             </h3>
 
@@ -127,10 +109,7 @@ export function ProductCard({
 
             {/* Price */}
             <div className="flex items-baseline gap-2 mb-3">
-              <span className={cn(
-                "text-base font-semibold",
-                isFeatured && "text-lg"
-              )}>
+              <span className="text-base font-semibold">
                 ${product.price.toFixed(2)}
               </span>
               {product.originalPrice && product.originalPrice > product.price && (
@@ -141,35 +120,33 @@ export function ProductCard({
             </div>
 
             {/* Actions */}
-            {showActions && (
-              <div className="flex items-center gap-2 mt-auto">
-                <Button
-                  className="flex-1 bg-[#0066cc] hover:bg-[#0066cc]/90 text-white"
-                  onClick={handleAddToCart}
-                  disabled={!product.inStock || isInCart(product.id)}
-                >
-                  {isInCart(product.id) ? "Added" : "Add to Cart"}
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="icon"
+            <div className="flex items-center gap-2 mt-auto">
+              <Button
+                className="flex-1 bg-[#0066cc] hover:bg-[#0066cc]/90 text-white"
+                onClick={handleAddToCart}
+                disabled={!product.inStock || isInCart(product.id)}
+              >
+                {isInCart(product.id) ? "Added" : "Add to Cart"}
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="icon"
+                className={cn(
+                  "border-2",
+                  isInWishlist(product.id) && "border-[#0066cc] text-[#0066cc]"
+                )}
+                onClick={handleWishlistToggle}
+                aria-label={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+              >
+                <Heart
                   className={cn(
-                    "border-2",
-                    isInWishlist(product.id) && "border-[#0066cc] text-[#0066cc]"
+                    "h-4 w-4",
+                    isInWishlist(product.id) && "fill-current"
                   )}
-                  onClick={handleWishlistToggle}
-                  aria-label={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
-                >
-                  <Heart 
-                    className={cn(
-                      "h-4 w-4",
-                      isInWishlist(product.id) && "fill-current"
-                    )} 
-                  />
-                </Button>
-              </div>
-            )}
+                />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Link>

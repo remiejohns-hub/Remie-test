@@ -9,25 +9,25 @@ export function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-serif font-black text-lg">S</span>
+              <div className="h-8 w-8 rounded-lg bg-[#0066cc] flex items-center justify-center">
+                <span className="text-white font-serif font-black text-lg">P</span>
               </div>
-              <span className="font-serif font-black text-xl text-foreground">ShopHub</span>
+              <span className="font-serif font-black text-xl text-foreground">POS Digital</span>
             </div>
             <p className="text-muted text-sm leading-relaxed">
               Your trusted online shopping destination for quality products at great prices.
             </p>
             <div className="flex space-x-4">
-              <Link href="#" className="text-muted hover:text-accent transition-colors">
+              <Link href="#" className="text-muted hover:text-[#0066cc] transition-colors">
                 <Facebook className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-muted hover:text-accent transition-colors">
+              <Link href="#" className="text-muted hover:text-[#0066cc] transition-colors">
                 <Twitter className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-muted hover:text-accent transition-colors">
+              <Link href="#" className="text-muted hover:text-[#0066cc] transition-colors">
                 <Instagram className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-muted hover:text-accent transition-colors">
+              <Link href="#" className="text-muted hover:text-[#0066cc] transition-colors">
                 <Mail className="h-5 w-5" />
               </Link>
             </div>
@@ -38,22 +38,22 @@ export function Footer() {
             <h3 className="font-serif font-semibold text-foreground">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/products" className="text-muted hover:text-accent transition-colors text-sm">
+                <Link href="/products" className="text-muted hover:text-[#0066cc] transition-colors text-sm">
                   All Products
                 </Link>
               </li>
               <li>
-                <Link href="/categories" className="text-muted hover:text-accent transition-colors text-sm">
+                <Link href="/categories" className="text-muted hover:text-[#0066cc] transition-colors text-sm">
                   Categories
                 </Link>
               </li>
               <li>
-                <Link href="/deals" className="text-muted hover:text-accent transition-colors text-sm">
+                <Link href="/deals" className="text-muted hover:text-[#0066cc] transition-colors text-sm">
                   Special Deals
                 </Link>
               </li>
               <li>
-                <Link href="/new-arrivals" className="text-muted hover:text-accent transition-colors text-sm">
+                <Link href="/new-arrivals" className="text-muted hover:text-[#0066cc] transition-colors text-sm">
                   New Arrivals
                 </Link>
               </li>
@@ -65,22 +65,22 @@ export function Footer() {
             <h3 className="font-serif font-semibold text-foreground">Customer Service</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/contact" className="text-muted hover:text-accent transition-colors text-sm">
+                <Link href="/contact" className="text-muted hover:text-[#0066cc] transition-colors text-sm">
                   Contact Us
                 </Link>
               </li>
               <li>
-                <Link href="/shipping" className="text-muted hover:text-accent transition-colors text-sm">
+                <Link href="/shipping" className="text-muted hover:text-[#0066cc] transition-colors text-sm">
                   Shipping Info
                 </Link>
               </li>
               <li>
-                <Link href="/returns" className="text-muted hover:text-accent transition-colors text-sm">
+                <Link href="/returns" className="text-muted hover:text-[#0066cc] transition-colors text-sm">
                   Returns
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="text-muted hover:text-accent transition-colors text-sm">
+                <Link href="/faq" className="text-muted hover:text-[#0066cc] transition-colors text-sm">
                   FAQ
                 </Link>
               </li>
@@ -97,7 +97,7 @@ export function Footer() {
                 placeholder="Enter your email"
                 className="w-full px-3 py-2 bg-input border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              <button className="w-full bg-accent text-accent-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-accent/90 transition-colors">
+              <button className="w-full bg-[#0066cc] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#0066cc]/90 transition-colors">
                 Subscribe
               </button>
             </div>
@@ -105,7 +105,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border mt-8 pt-8 text-center">
-          <p className="text-muted text-sm">© 2024 ShopHub. All rights reserved. Built with modern web technologies.</p>
+          <p className="text-muted text-sm">© 2024 POS Digital. All rights reserved. Built with modern web technologies.</p>
         </div>
       </div>
     </footer>

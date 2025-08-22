@@ -117,7 +117,7 @@ export class ProductService {
   // Sort products
   static sortProducts(
     products: Product[],
-    sortBy: "popular" | "newest" | "top-sales" | "price-low",
+    sortBy: "popular" | "newest" | "top-sales" | "price-low" | "price-high",
   ): Product[] {
     const sortedProducts = [...products]
 
@@ -130,6 +130,8 @@ export class ProductService {
         return sortedProducts.sort((a, b) => b.rating - a.rating) // Using rating as proxy for sales
       case "price-low":
         return sortedProducts.sort((a, b) => a.price - b.price)
+      case "price-high":
+        return sortedProducts.sort((a, b) => b.price - a.price)
       default:
         return sortedProducts
     }

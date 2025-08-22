@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Header } from "@/components/layout/header"
+import { Header } from "@/components/layout/header-optimized"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ArrowLeft, CreditCard, Truck, Shield, CheckCircle } from "lucide-react"
 import Link from "next/link"
-import { useCart } from "@/lib/hooks/use-cart"
+import { useCart } from "@/lib/context/app-context-optimized"
 import { useRouter } from "next/navigation"
 
 interface CheckoutForm {

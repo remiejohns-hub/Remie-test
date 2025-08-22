@@ -144,7 +144,6 @@ function CategoriesSection() {
 }
 
 export default function HomePage() {
-
   return (
     <ClientOnly fallback={
       <div className="min-h-screen flex flex-col">

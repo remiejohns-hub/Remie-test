@@ -1,14 +1,13 @@
 "use client"
 
-import React, { useState } from "react"
-import { ProductCard } from "./product-card-new"
-import { ProductFilters, ActiveFilters } from "./product-filters"
+import React, { useState, useMemo, useCallback } from "react"
+import { ProductCard } from "./product-card-optimized"
+import { ProductFilters } from "./product-filters"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Grid3X3, List, Grid, Filter, Search } from "lucide-react"
-import { useApp } from "@/lib/context/app-context"
+import { useApp } from "@/lib/context/app-context-optimized"
 import { ProductService } from "@/lib/services/product-service"
 import type { Product } from "@/lib/types/product"
 import { cn } from "@/lib/utils"
@@ -24,7 +23,7 @@ interface ProductsGridProps {
   searchTerm?: string
 }
 
-export function ProductsGrid({
+const ProductsGrid = React.memo(function ProductsGrid({
   products,
   loading = false,
   showFilters = true,
@@ -38,19 +37,33 @@ export function ProductsGrid({
   const [viewMode, setViewMode] = useState<"grid" | "list" | "compact">("grid")
   const [sortBy, setSortBy] = useState<"popular" | "newest" | "top-sales" | "price-low">("popular")
 
-  const sortedProducts = React.useMemo(() => {
+  const sortedProducts = useMemo(() => {
     return ProductService.sortProducts(products, sortBy)
   }, [products, sortBy])
 
-  const handleSortChange = (value: string) => {
+  const handleSortChange = useCallback((value: string) => {
     setSortBy(value as any)
-  }
+  }, [])
 
-  const handleSearchChange = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && onSearch) {
-      onSearch((e.target as HTMLInputElement).value)
+      e.preventDefault()
+      onSearch(e.currentTarget.value)
     }
-  }
+  }, [onSearch])
+
+  const sortButtons = useMemo(() => [
+    { key: "popular", label: "Popular" },
+    { key: "newest", label: "Latest" },
+    { key: "top-sales", label: "Top Sales" },
+    { key: "price-low", label: "Price" }
+  ], [])
+
+  const viewModeButtons = useMemo(() => [
+    { key: "grid", icon: Grid, label: "Grid view" },
+    { key: "list", icon: List, label: "List view" },
+    { key: "compact", icon: Grid3X3, label: "Compact view" }
+  ], [])
 
   if (loading) {
     return <ProductsGridSkeleton viewMode={viewMode} />
@@ -84,7 +97,9 @@ export function ProductsGrid({
           <div className="flex-1">
             {/* Search section with label */}
             <div className="space-y-2 max-w-4xl mx-auto">
-              <label htmlFor="product-search" className="block text-base font-medium text-foreground ml-4 mb-2">Search Product</label>
+              <label htmlFor="product-search" className="block text-base font-medium text-foreground ml-4 mb-2">
+                Search Product
+              </label>
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
@@ -92,103 +107,49 @@ export function ProductsGrid({
                   placeholder="Search products..."
                   defaultValue=""
                   type="search"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && onSearch) {
-                      e.preventDefault();
-                      // Only trigger the search on Enter
-                      onSearch(e.currentTarget.value);
-                    }
-                  }}
+                  onKeyDown={handleSearchKeyDown}
                   className="pl-12 h-12 text-base w-full bg-background border border-input rounded-full shadow-sm placeholder:text-muted-foreground transition-shadow duration-200 hover:shadow-md focus:shadow-lg focus:ring-1 focus:ring-ring focus:outline-none"
                 />
               </div>
             </div>
+            
+            {/* Sort buttons */}
             <div className="flex items-center gap-2 mt-4">
-              <Button
-                variant={sortBy === "popular" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleSortChange("popular")}
-                className={cn(
-                  "rounded-full px-6",
-                  sortBy === "popular" && "bg-black text-white hover:bg-black/90"
-                )}
-              >
-                Popular
-              </Button>
-              <Button
-                variant={sortBy === "newest" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleSortChange("newest")}
-                className={cn(
-                  "rounded-full px-6",
-                  sortBy === "newest" && "bg-black text-white hover:bg-black/90"
-                )}
-              >
-                Latest
-              </Button>
-              <Button
-                variant={sortBy === "top-sales" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleSortChange("top-sales")}
-                className={cn(
-                  "rounded-full px-6",
-                  sortBy === "top-sales" && "bg-black text-white hover:bg-black/90"
-                )}
-              >
-                Top Sales
-              </Button>
-              <Button
-                variant={sortBy === "price-low" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleSortChange("price-low")}
-                className={cn(
-                  "rounded-full px-6",
-                  sortBy === "price-low" && "bg-black text-white hover:bg-black/90"
-                )}
-              >
-                Price
-              </Button>
+              {sortButtons.map(({ key, label }) => (
+                <Button
+                  key={key}
+                  variant={sortBy === key ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSortChange(key)}
+                  className={cn(
+                    "rounded-full px-6",
+                    sortBy === key && "bg-black text-white hover:bg-black/90"
+                  )}
+                >
+                  {label}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* View Mode Toggle */}
-          {showViewToggle && (
-            <div className="flex items-center border rounded-md p-1">
+        {/* View Mode Toggle */}
+        {showViewToggle && (
+          <div className="flex items-center border rounded-md p-1">
+            {viewModeButtons.map(({ key, icon: Icon, label }) => (
               <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
+                key={key}
+                variant={viewMode === key ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setViewMode("grid")}
+                onClick={() => setViewMode(key as any)}
                 className="h-8 w-8 p-0"
-                aria-label="Grid view"
+                aria-label={label}
               >
-                <Grid className="h-4 w-4" />
+                <Icon className="h-4 w-4" />
               </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className="h-8 w-8 p-0"
-                aria-label="List view"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "compact" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("compact")}
-                className="h-8 w-8 p-0"
-                aria-label="Compact view"
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-
-          {/* Sorting */}
-          {/* Sorting removed per design request (Name control hidden) */}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Products Grid */}
@@ -224,11 +185,28 @@ export function ProductsGrid({
       )}
     </div>
   )
-}
+})
 
-// Skeleton Loading Component
-function ProductsGridSkeleton({ viewMode }: { viewMode: string }) {
+// Optimized Skeleton Loading Component
+const ProductsGridSkeleton = React.memo(function ProductsGridSkeleton({ 
+  viewMode 
+}: { 
+  viewMode: string 
+}) {
   const skeletonCount = viewMode === "compact" ? 12 : 6
+
+  const skeletonItems = useMemo(() => 
+    Array.from({ length: skeletonCount }, (_, i) => (
+      <div key={i} className="space-y-3">
+        <Skeleton className="aspect-square w-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-6 w-1/3" />
+        </div>
+      </div>
+    )), [skeletonCount]
+  )
 
   return (
     <div className="space-y-6">
@@ -254,22 +232,13 @@ function ProductsGridSkeleton({ viewMode }: { viewMode: string }) {
           viewMode === "compact" && "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
         )}
       >
-        {Array.from({ length: skeletonCount }).map((_, i) => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="aspect-square w-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-6 w-1/3" />
-            </div>
-          </div>
-        ))}
+        {skeletonItems}
       </div>
     </div>
   )
-}
+})
 
-// Main Products Page Component
+// Optimized Main Products Page Component
 export function ProductsPage() {
   const { state } = useApp()
   const [products, setProducts] = React.useState<Product[]>([])
@@ -280,32 +249,26 @@ export function ProductsPage() {
   const filters = state?.filters || {}
 
   React.useEffect(() => {
-      const loadProducts = () => {
+    const loadProducts = async () => {
       setLoading(true)
       try {
-        // Simulate API call with shorter delay
-        setTimeout(() => {
-          try {
-            let filteredProducts = ProductService.getProducts(filters)            // Apply search filter if search term exists
-            if (searchTerm.trim()) {
-              filteredProducts = filteredProducts.filter(product =>
-                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-              )
-            }
-            
-            setProducts(filteredProducts || [])
-          } catch (error) {
-            console.error("Error loading products:", error)
-            setProducts([])
-          } finally {
-            setLoading(false)
-          }
-        }, 100) // Reduced loading time for faster transitions
+        // Remove artificial delay - load products immediately
+        let filteredProducts = ProductService.getProducts(filters)
+        
+        // Apply search filter if search term exists
+        if (searchTerm.trim()) {
+          filteredProducts = filteredProducts.filter(product =>
+            product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+          )
+        }
+        
+        setProducts(filteredProducts || [])
       } catch (error) {
-        console.error("Error in loadProducts:", error)
+        console.error("Error loading products:", error)
         setProducts([])
+      } finally {
         setLoading(false)
       }
     }
@@ -313,12 +276,9 @@ export function ProductsPage() {
     loadProducts()
   }, [filters, searchTerm])
 
-  const [inputValue, setInputValue] = React.useState("")
-
-  const handleSearch = (term: string) => {
-    // Only update the search term (which triggers the search) when Enter is pressed
+  const handleSearch = useCallback((term: string) => {
     setSearchTerm(term)
-  }
+  }, [])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -344,3 +304,5 @@ export function ProductsPage() {
     </div>
   )
 }
+
+export { ProductsGrid }

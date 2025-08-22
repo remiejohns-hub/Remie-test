@@ -1,13 +1,13 @@
 "use client"
 
-import React from "react"
+import React, { memo, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Heart, Star } from "lucide-react"
-import { useApp } from "@/lib/context/app-context"
+import { useApp } from "@/lib/context/app-context-optimized"
 import type { Product } from "@/lib/types/product"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
@@ -19,7 +19,7 @@ interface ProductCardProps {
   className?: string
 }
 
-export function ProductCard({ 
+const ProductCard = memo(function ProductCard({ 
   product, 
   variant = "default",
   showActions = true,
@@ -28,7 +28,7 @@ export function ProductCard({
   const { addToCart, isInCart, addToWishlist, removeFromWishlist, isInWishlist } = useApp()
   const { toast } = useToast()
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     addToCart(product)
@@ -37,9 +37,9 @@ export function ProductCard({
       description: `${product.name} added to your cart`,
       variant: "default"
     })
-  }
+  }, [addToCart, product, toast])
 
-  const handleWishlistToggle = (e: React.MouseEvent) => {
+  const handleWishlistToggle = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (isInWishlist(product.id)) {
@@ -47,10 +47,35 @@ export function ProductCard({
     } else {
       addToWishlist(product.id)
     }
-  }
+  }, [isInWishlist, removeFromWishlist, addToWishlist, product.id])
 
   const isFeatured = variant === "featured"
   const isCompact = variant === "compact"
+  const inCart = isInCart(product.id)
+  const inWishlist = isInWishlist(product.id)
+
+  // Memoize discount calculation
+  const discountPercentage = React.useMemo(() => {
+    if (product.originalPrice && product.originalPrice > product.price) {
+      return Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    }
+    return 0
+  }, [product.originalPrice, product.price])
+
+  // Memoize star rating
+  const starRating = React.useMemo(() => {
+    return [...Array(5)].map((_, i) => (
+      <Star
+        key={i}
+        className={cn(
+          "h-3.5 w-3.5",
+          i < Math.floor(product.rating) 
+            ? "fill-yellow-400 text-yellow-400" 
+            : "text-muted/30"
+        )}
+      />
+    ))
+  }, [product.rating])
 
   return (
     <Card 
@@ -76,15 +101,16 @@ export function ProductCard({
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority={isFeatured}
             />
             
             {/* Sale Badge */}
-            {product.originalPrice && product.originalPrice > product.price && (
+            {discountPercentage > 0 && (
               <Badge 
                 variant="secondary" 
                 className="absolute top-2 right-2 bg-red-500 text-white hover:bg-red-600"
               >
-                {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                {discountPercentage}% OFF
               </Badge>
             )}
           </div>
@@ -109,17 +135,7 @@ export function ProductCard({
 
             {/* Rating */}
             <div className="flex items-center gap-1 mb-2">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={cn(
-                    "h-3.5 w-3.5",
-                    i < Math.floor(product.rating) 
-                      ? "fill-yellow-400 text-yellow-400" 
-                      : "text-muted/30"
-                  )}
-                />
-              ))}
+              {starRating}
               <span className="text-sm text-muted-foreground ml-1">
                 ({product.reviewCount})
               </span>
@@ -146,9 +162,9 @@ export function ProductCard({
                 <Button
                   className="flex-1 bg-[#0066cc] hover:bg-[#0066cc]/90 text-white"
                   onClick={handleAddToCart}
-                  disabled={!product.inStock || isInCart(product.id)}
+                  disabled={!product.inStock || inCart}
                 >
-                  {isInCart(product.id) ? "Added" : "Add to Cart"}
+                  {inCart ? "Added" : "Add to Cart"}
                 </Button>
                 
                 <Button
@@ -156,15 +172,15 @@ export function ProductCard({
                   size="icon"
                   className={cn(
                     "border-2",
-                    isInWishlist(product.id) && "border-[#0066cc] text-[#0066cc]"
+                    inWishlist && "border-[#0066cc] text-[#0066cc]"
                   )}
                   onClick={handleWishlistToggle}
-                  aria-label={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
                 >
                   <Heart 
                     className={cn(
                       "h-4 w-4",
-                      isInWishlist(product.id) && "fill-current"
+                      inWishlist && "fill-current"
                     )} 
                   />
                 </Button>
@@ -175,4 +191,6 @@ export function ProductCard({
       </Link>
     </Card>
   )
-}
+})
+
+export { ProductCard }

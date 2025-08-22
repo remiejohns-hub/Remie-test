@@ -1,13 +1,13 @@
 "use client"
 
-import { Header } from "@/components/layout/header"
+import { Header } from "@/components/layout/header-optimized"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { useApp } from "@/lib/context/app-context"
+import { useApp } from "@/lib/context/app-context-optimized"
 
 export default function CartPage() {
   const { state, updateCartQuantity, removeFromCart, clearCart } = useApp()

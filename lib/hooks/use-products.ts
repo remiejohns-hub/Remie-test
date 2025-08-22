@@ -6,15 +6,27 @@ import { ProductService } from "@/lib/services/product-service"
 
 export function useProducts(initialFilters?: ProductFilters) {
   const [filters, setFilters] = useState<ProductFilters>(initialFilters || {})
-  const [sortBy, setSortBy] = useState<"name" | "price-low" | "price-high" | "rating" | "newest">("name")
+  const [sortBy, setSortBy] = useState<"popular" | "newest" | "top-sales" | "price-low" | "price-high" | "name">("popular")
   const [loading, setLoading] = useState(false)
+  const [products, setProducts] = useState<Product[]>([])
 
-  const products = useMemo(() => {
+  useEffect(() => {
     setLoading(true)
     const filteredProducts = ProductService.getProducts(filters)
-    const sortedProducts = ProductService.sortProducts(filteredProducts, sortBy)
+    
+    // Handle "name" sorting by using "popular" and then sorting by name
+    let sortedProducts = filteredProducts;
+    if (sortBy === "name") {
+      sortedProducts = [...filteredProducts].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy !== "popular" && sortBy !== "newest" && sortBy !== "top-sales" && sortBy !== "price-low" && sortBy !== "price-high") {
+      // Fallback to popular if sortBy is not a valid option
+      sortedProducts = ProductService.sortProducts(filteredProducts, "popular");
+    } else {
+      sortedProducts = ProductService.sortProducts(filteredProducts, sortBy);
+    }
+    
+    setProducts(sortedProducts)
     setLoading(false)
-    return sortedProducts
   }, [filters, sortBy])
 
   const updateFilters = (newFilters: Partial<ProductFilters>) => {

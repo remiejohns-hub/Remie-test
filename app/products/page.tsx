@@ -1,8 +1,8 @@
 "use client"
 
-import { Header } from "@/components/layout/header"
+import { Header } from "@/components/layout/header-optimized"
 import { Footer } from "@/components/layout/footer"
-import { ProductsPage } from "@/components/products/products-grid"
+import { ProductsPage } from "@/components/products/products-grid-optimized"
 
 export default function ProductsPageRoute() {
   return (
