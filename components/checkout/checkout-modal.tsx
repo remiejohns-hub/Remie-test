@@ -223,12 +223,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       case "shipping":
         return (
           <div className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Mail className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Contact Information</h3>
-              </div>
-              
+            <div className="space-y-2">
               <div>
                 <Label htmlFor="email">Email Address</Label>
                 <Input
@@ -241,22 +236,11 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 />
                 {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
               </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="newsletter"
-                  checked={form.newsletter}
-                  onCheckedChange={(checked) => updateForm("newsletter", checked as boolean)}
-                />
-                <Label htmlFor="newsletter" className="text-sm">
-                  Subscribe to our newsletter for updates and special offers
-                </Label>
-              </div>
             </div>
 
             <Separator />
 
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div className="flex items-center gap-2 mb-4">
                 <MapPin className="h-5 w-5 text-primary" />
                 <h3 className="font-semibold">Shipping Address</h3>
@@ -313,18 +297,13 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </div>
                 <div>
                   <Label htmlFor="state">State</Label>
-                  <Select value={form.state} onValueChange={(value) => updateForm("state", value)}>
-                    <SelectTrigger className={errors.state ? "border-destructive" : ""}>
-                      <SelectValue placeholder="Select state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CA">California</SelectItem>
-                      <SelectItem value="NY">New York</SelectItem>
-                      <SelectItem value="TX">Texas</SelectItem>
-                      <SelectItem value="FL">Florida</SelectItem>
-                      <SelectItem value="IL">Illinois</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="state"
+                    value={form.state}
+                    onChange={(e) => updateForm("state", e.target.value)}
+                    className={errors.state ? "border-destructive" : ""}
+                    placeholder="Enter state"
+                  />
                   {errors.state && <p className="text-sm text-destructive mt-1">{errors.state}</p>}
                 </div>
                 <div>
@@ -488,9 +467,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
             </div>
 
             {/* Order Summary */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <h4 className="font-medium">Order Items</h4>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {cart.items.map((item) => (
                   <div key={item.product.id} className="flex gap-3 p-3 bg-muted/20 rounded-lg">
                     <div className="w-16 h-16 bg-muted/20 rounded overflow-hidden flex-shrink-0">
@@ -606,7 +585,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
   const modalContent = (
     <div 
-      className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-2 sm:p-4"
+      className="fixed inset-0 z-[9999] bg-black/50 flex items-start justify-center pt-10 pb-10 px-4"
       style={{ 
         position: 'fixed',
         top: 0,
@@ -615,7 +594,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         bottom: 0,
         zIndex: 9999,
         margin: 0,
-        padding: '8px 16px',
+        padding: '40px 16px',
         boxSizing: 'border-box'
       }}
       onClick={(e) => {
@@ -625,35 +604,27 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       }}
     >
       <div 
-        className="bg-background rounded-lg shadow-2xl w-full max-w-[1200px] h-[95vh] max-h-[900px] overflow-hidden relative border border-border"
+        className="bg-background rounded-lg shadow-2xl w-full max-w-[900px] h-[90vh] overflow-hidden relative border border-border"
         style={{
-          maxWidth: 'min(1200px, calc(100vw - 32px))',
-          maxHeight: 'min(900px, calc(100vh - 32px))',
-          width: '100%',
-          height: 'auto',
-          minHeight: '600px'
+          maxWidth: 'min(900px, calc(100vw - 32px))',
+          height: 'calc(100vh - 40px)',
+          maxHeight: '90vh',
+          width: '100%'
         }}
       >
-        <div className="flex flex-col lg:flex-row h-full w-full">
+
+        <div className="flex flex-col lg:flex-row w-full h-full">
           {/* Left side - Form content */}
-          <div className="flex-1 min-w-0 p-6 overflow-y-auto max-h-full">
-            <div className="mb-6">
+          <div className="flex-1 min-w-0 p-4 flex flex-col h-full">
+            <div className="mb-3 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-xl font-bold">
                   {currentStep === "complete" ? "Order Complete" : "Checkout"}
                 </h1>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onOpenChange(false)}
-                  className="absolute top-4 right-4 z-10"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
               
               {currentStep !== "complete" && (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <Progress value={progress} className="w-full" />
                   <div className="flex justify-between text-sm">
                     {steps.map((step, index) => {
@@ -681,11 +652,13 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               )}
             </div>
 
-            {renderStepContent()}
+            <div className="flex-1 overflow-y-auto">
+              {renderStepContent()}
+            </div>
 
             {/* Navigation buttons */}
             {currentStep !== "complete" && (
-              <div className="flex justify-between mt-8 pt-6 border-t">
+              <div className="flex justify-between mt-3 pt-3 border-t flex-shrink-0">
                 <Button
                   variant="outline"
                   onClick={handleBack}
@@ -711,15 +684,28 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 )}
               </div>
             )}
+            
+            {/* Cancel button for complete step */}
+            {currentStep === "complete" && (
+              <div className="flex justify-center mt-3 pt-3 border-t flex-shrink-0">
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Close
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Right side - Enhanced Order summary (hidden on complete step) */}
           {currentStep !== "complete" && (
-            <div className="w-full lg:w-[380px] flex-shrink-0 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 p-0 border-l lg:border-l border-t lg:border-t-0 border-border/50 overflow-y-auto max-h-full">
+            <div className="w-full lg:w-[300px] flex-shrink-0 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 p-0 border-l lg:border-l border-t lg:border-t-0 border-border/50 flex flex-col h-full">
               {/* Header Section */}
-              <div className="p-6 pb-4 border-b border-border/30">
+              <div className="p-3 pb-2 border-b border-border/30 flex-shrink-0">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-lg text-foreground">Order Summary</h3>
+                  <h3 className="font-bold text-base text-foreground">Order Summary</h3>
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
                     {cart.itemCount} item{cart.itemCount !== 1 ? "s" : ""}
                   </Badge>
@@ -728,8 +714,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               </div>
               
               {/* Cart items with enhanced styling */}
-              <div className="p-6 pt-4">
-                <div className="space-y-4 mb-6">
+              <div className="p-3 pt-2 flex-1 overflow-y-auto">
+                <div className="space-y-2 mb-3">
                   {cart.items.map((item, index) => (
                     <div key={item.product.id} className="group">
                       <div className="flex gap-4 p-3 rounded-xl bg-white/60 dark:bg-white/5 border border-border/30 hover:border-border/60 transition-all duration-200 hover:shadow-sm">
@@ -822,43 +808,17 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   </div>
                 </div>
 
-                {/* Enhanced Security & Trust Indicators */}
-                <div className="mt-6 space-y-3">
-                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                    <Shield className="h-4 w-4 text-green-600" />
-                    <span className="font-medium text-green-700 dark:text-green-400">256-bit SSL Encryption</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="flex items-center gap-2 text-muted-foreground bg-white/60 dark:bg-white/5 p-2 rounded-lg border border-border/30">
-                      <RotateCcw className="h-3 w-3 text-blue-600" />
-                      <span>30-day returns</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground bg-white/60 dark:bg-white/5 p-2 rounded-lg border border-border/30">
-                      <Headphones className="h-3 w-3 text-purple-600" />
-                      <span>24/7 support</span>
-                    </div>
-                  </div>
-                </div>
+              </div>
 
-                {/* Payment Security Badges */}
-                <div className="mt-4 pt-4 border-t border-border/30">
-                  <p className="text-xs text-muted-foreground text-center mb-2">Secured by</p>
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="flex items-center gap-1 text-xs bg-white/60 dark:bg-white/5 px-2 py-1 rounded border border-border/30">
-                      <Lock className="h-3 w-3 text-green-600" />
-                      <span className="font-medium">SSL</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs bg-white/60 dark:bg-white/5 px-2 py-1 rounded border border-border/30">
-                      <Shield className="h-3 w-3 text-blue-600" />
-                      <span className="font-medium">Secure</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs bg-white/60 dark:bg-white/5 px-2 py-1 rounded border border-border/30">
-                      <Star className="h-3 w-3 text-yellow-600" />
-                      <span className="font-medium">Trusted</span>
-                    </div>
-                  </div>
-                </div>
+              {/* Cancel Button - Always Visible */}
+              <div className="p-3 pt-2 border-t border-border/30 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="w-full border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  Cancel
+                </Button>
               </div>
             </div>
           )}
