@@ -1,17 +1,19 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useMemo, useCallback } from "react"
 import { ProductCard } from "./product-card-new"
 import { ProductFilters, ActiveFilters } from "./product-filters"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Grid3X3, List, Grid, Filter, Search } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Grid3X3, List, Grid, Filter, Search, RefreshCw, Home, RotateCcw, Lightbulb } from "lucide-react"
 import { useApp } from "@/lib/context/app-context"
 import { ProductService } from "@/lib/services/product-service"
 import type { Product } from "@/lib/types/product"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 interface ProductsGridProps {
   products: Product[]
@@ -34,7 +36,7 @@ export function ProductsGrid({
   onSearch,
   searchTerm = ""
 }: ProductsGridProps) {
-  const { state } = useApp()
+  const { state, clearFilters } = useApp()
   const [viewMode, setViewMode] = useState<"grid" | "list" | "compact">("grid")
   const [sortBy, setSortBy] = useState<"popular" | "newest" | "top-sales" | "price-low">("popular")
 
@@ -52,26 +54,158 @@ export function ProductsGrid({
     }
   }
 
+  // Helper functions for no products found state
+  const handleClearSearch = useCallback(() => {
+    if (onSearch) {
+      onSearch("")
+      // Clear the input field
+      const searchInput = document.getElementById('product-search') as HTMLInputElement
+      if (searchInput) {
+        searchInput.value = ""
+      }
+    }
+  }, [onSearch])
+
+  const handleClearFilters = useCallback(() => {
+    clearFilters()
+  }, [clearFilters])
+
+  const handleClearAll = useCallback(() => {
+    handleClearSearch()
+    handleClearFilters()
+  }, [handleClearSearch, handleClearFilters])
+
+  // Get search suggestions
+  const searchSuggestions = useMemo(() => {
+    const allProducts = ProductService.getProducts({})
+    const categories = [...new Set(allProducts.map(p => p.category))]
+    const tags = [...new Set(allProducts.flatMap(p => p.tags))].slice(0, 8)
+    return { categories, tags }
+  }, [])
+
+  const hasActiveFilters = useMemo(() => {
+    return Object.values(state.filters || {}).some(value => {
+      if (Array.isArray(value)) return value.length > 0
+      return value !== undefined && value !== ""
+    })
+  }, [state.filters])
+
+  const hasSearchTerm = useMemo(() => {
+    return searchTerm && searchTerm.trim().length > 0
+  }, [searchTerm])
+
   if (loading) {
     return <ProductsGridSkeleton viewMode={viewMode} />
   }
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="w-24 h-24 mx-auto mb-4 bg-muted/20 rounded-full flex items-center justify-center">
+      <div className="text-center py-16 px-6 max-w-2xl mx-auto">
+        <div className="w-24 h-24 mx-auto mb-6 bg-muted/20 rounded-full flex items-center justify-center">
           <Filter className="h-12 w-12 text-muted" />
         </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">No products found</h3>
-        <p className="text-muted mb-4">
-          Try adjusting your filters or search terms to find what you're looking for.
+        
+        <h3 className="text-2xl font-bold text-foreground mb-3">No products found</h3>
+        
+        <p className="text-muted mb-8 text-lg">
+          {hasSearchTerm && hasActiveFilters
+            ? `No products match "${searchTerm}" with the current filters applied.`
+            : hasSearchTerm
+            ? `No products found for "${searchTerm}".`
+            : hasActiveFilters
+            ? "No products match the current filter criteria."
+            : "No products available at the moment."
+          }
         </p>
-        <Button 
-          variant="outline" 
-          onClick={() => window.location.reload()}
-        >
-          Reset Filters
-        </Button>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+          {hasSearchTerm && (
+            <Button 
+              variant="default"
+              onClick={handleClearSearch}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Clear Search
+            </Button>
+          )}
+          
+          {hasActiveFilters && (
+            <Button 
+              variant="outline"
+              onClick={handleClearFilters}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Clear Filters
+            </Button>
+          )}
+          
+          {(hasSearchTerm || hasActiveFilters) && (
+            <Button 
+              variant="outline"
+              onClick={handleClearAll}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
+          )}
+          
+          <Link href="/">
+            <Button variant="outline">
+              <Home className="h-4 w-4 mr-2" />
+              Go Home
+            </Button>
+          </Link>
+        </div>
+
+        {/* Search Suggestions */}
+        {(hasSearchTerm || hasActiveFilters) && (
+          <div className="bg-muted/30 rounded-lg p-6 text-left">
+            <div className="flex items-center gap-2 mb-4">
+              <Lightbulb className="h-5 w-5 text-yellow-500" />
+              <h4 className="font-semibold text-foreground">Try searching for:</h4>
+            </div>
+            
+            <div className="space-y-4">
+              {searchSuggestions.categories.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted mb-2 font-medium">Popular Categories:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {searchSuggestions.categories.map((category) => (
+                      <Badge
+                        key={category}
+                        variant="secondary"
+                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                        onClick={() => onSearch && onSearch(category)}
+                      >
+                        {category}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {searchSuggestions.tags.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted mb-2 font-medium">Popular Tags:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {searchSuggestions.tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                        onClick={() => onSearch && onSearch(tag)}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     )
   }

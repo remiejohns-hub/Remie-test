@@ -2,11 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ShoppingCart, Menu, User } from "lucide-react"
+import { Menu, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/lib/context/app-context-optimized"
 import { ClientOnly } from "@/components/ui/client-only"
+import { CartDropdown } from "@/components/layout/cart-dropdown"
 import { cn } from "@/lib/utils"
 import { useState, useCallback, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -83,16 +83,16 @@ export function Header() {
     )
   ), [isMobileMenuOpen, pathname, closeMobileMenu])
 
-  // Memoize cart badge to prevent unnecessary re-renders
-  const cartBadge = useMemo(() => (
-    <ClientOnly fallback={null}>
-      {cart.itemCount > 0 && (
-        <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-[#0066cc] text-white">
-          {cart.itemCount > 99 ? '99+' : cart.itemCount}
-        </Badge>
-      )}
+  // Cart dropdown component wrapped in ClientOnly for better SSR
+  const cartComponent = useMemo(() => (
+    <ClientOnly fallback={
+      <Button variant="ghost" size="icon" className="relative hover:bg-muted/50 transition-colors">
+        <div className="h-5 w-5" />
+      </Button>
+    }>
+      <CartDropdown />
     </ClientOnly>
-  ), [cart.itemCount])
+  ), [])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -128,17 +128,7 @@ export function Header() {
               <User className="h-5 w-5" />
             </Button>
 
-            <Link href="/cart" className="relative" onMouseEnter={() => router.prefetch('/cart')}>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="relative hover:bg-muted/50 transition-colors"
-                aria-label={`Shopping cart with ${cart.itemCount} items`}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {cartBadge}
-              </Button>
-            </Link>
+            {cartComponent}
 
             <Button 
               variant="ghost" 

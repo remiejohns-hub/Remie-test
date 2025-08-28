@@ -1,17 +1,20 @@
 "use client"
 
+import { useState } from "react"
 import { Header } from "@/components/layout/header-optimized"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from "lucide-react"
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, CreditCard } from "lucide-react"
 import Link from "next/link"
 import { useApp } from "@/lib/context/app-context-optimized"
+import { CheckoutModal } from "@/components/checkout/checkout-modal"
 
 export default function CartPage() {
   const { state, updateCartQuantity, removeFromCart, clearCart } = useApp()
   const { cart } = state
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
 
   const subtotal = cart.total
   const shipping = subtotal > 50 ? 0 : 9.99
@@ -193,11 +196,14 @@ export default function CartPage() {
                       </div>
                     )}
 
-                    <Link href="/checkout" className="block">
-                      <Button size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                        Proceed to Checkout
-                      </Button>
-                    </Link>
+                    <Button 
+                      size="lg" 
+                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                      onClick={() => setIsCheckoutModalOpen(true)}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Checkout - ${total.toFixed(2)}
+                    </Button>
 
                     <Link href="/products" className="block">
                       <Button variant="outline" size="lg" className="w-full bg-transparent">
@@ -231,6 +237,11 @@ export default function CartPage() {
       </main>
 
       <Footer />
+      
+      <CheckoutModal 
+        open={isCheckoutModalOpen} 
+        onOpenChange={setIsCheckoutModalOpen}
+      />
     </div>
   )
 }

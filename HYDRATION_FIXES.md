@@ -130,3 +130,4 @@ Instead of making the entire page client-side, consider using:
 4. Add error boundaries for better error handling
 5. Implement proper loading states for better UX
 
+
