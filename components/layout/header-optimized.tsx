@@ -14,7 +14,8 @@ import { useRouter } from "next/navigation"
 const navigationItems = [
   { href: "/products", label: "Products" },
   { href: "/categories", label: "Categories" },
-  { href: "/about", label: "About" }
+  { href: "/about", label: "About" },
+  { href: "/admin", label: "Admin" }
 ] as const
 
 export function Header() {

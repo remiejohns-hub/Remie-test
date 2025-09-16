@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import type { Product, ProductFilters } from "@/lib/types/product"
-import { ProductService } from "@/lib/services/product-service"
+import { sampleProducts } from "@/lib/data/products"
 
 // Cache for products to avoid repeated API calls
 const productCache = new Map<string, CacheEntry>()
@@ -11,6 +11,29 @@ const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 interface CacheEntry {
   data: Product[]
   timestamp: number
+}
+
+// Sort products function
+function sortProducts(
+  products: Product[],
+  sortBy: "popular" | "newest" | "top-sales" | "price-low" | "price-high"
+): Product[] {
+  const sortedProducts = [...products]
+
+  switch (sortBy) {
+    case "popular":
+      return sortedProducts.sort((a, b) => (b.rating * b.reviewCount) - (a.rating * a.reviewCount))
+    case "newest":
+      return sortedProducts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    case "top-sales":
+      return sortedProducts.sort((a, b) => b.rating - a.rating)
+    case "price-low":
+      return sortedProducts.sort((a, b) => a.price - b.price)
+    case "price-high":
+      return sortedProducts.sort((a, b) => b.price - a.price)
+    default:
+      return sortedProducts
+  }
 }
 
 function getCacheKey(filters: ProductFilters): string {
@@ -52,8 +75,42 @@ export function useProducts(initialFilters?: ProductFilters) {
         return
       }
 
-      // Load fresh data
-      const filteredProducts = ProductService.getProducts(filters)
+      // Load fresh data from static data
+      let filteredProducts = [...sampleProducts]
+
+      // Apply filters
+      if (filters) {
+        if (filters.category) {
+          filteredProducts = filteredProducts.filter((product) => product.category === filters.category)
+        }
+        if (filters.subcategory) {
+          filteredProducts = filteredProducts.filter((product) => product.subcategory === filters.subcategory)
+        }
+        if (filters.minPrice !== undefined) {
+          filteredProducts = filteredProducts.filter((product) => product.price >= filters.minPrice!)
+        }
+        if (filters.maxPrice !== undefined) {
+          filteredProducts = filteredProducts.filter((product) => product.price <= filters.maxPrice!)
+        }
+        if (filters.inStock !== undefined) {
+          filteredProducts = filteredProducts.filter((product) => product.inStock === filters.inStock)
+        }
+        if (filters.featured !== undefined) {
+          filteredProducts = filteredProducts.filter((product) => product.featured === filters.featured)
+        }
+        if (filters.tags && filters.tags.length > 0) {
+          filteredProducts = filteredProducts.filter((product) => filters.tags!.some((tag) => product.tags.includes(tag)))
+        }
+        if (filters.search) {
+          const searchTerm = filters.search.toLowerCase()
+          filteredProducts = filteredProducts.filter(
+            (product) =>
+              product.name.toLowerCase().includes(searchTerm) ||
+              product.description.toLowerCase().includes(searchTerm) ||
+              product.tags.some((tag) => tag.toLowerCase().includes(searchTerm))
+          )
+        }
+      }
       
       // Cache the results
       productCache.set(cacheKey, {
@@ -66,7 +123,7 @@ export function useProducts(initialFilters?: ProductFilters) {
       if (sortBy === "name") {
         sortedProducts = [...filteredProducts].sort((a, b) => a.name.localeCompare(b.name))
       } else if (sortBy !== "popular") {
-        sortedProducts = ProductService.sortProducts(filteredProducts, sortBy)
+        sortedProducts = sortProducts(filteredProducts, sortBy)
       }
       
       setProducts(sortedProducts)
@@ -125,8 +182,8 @@ export function useFeaturedProducts() {
         return
       }
 
-      // Load fresh data
-      const featuredProducts = ProductService.getFeaturedProducts()
+      // Load fresh data from static data
+      const featuredProducts = sampleProducts.filter(product => product.featured)
       
       // Cache the results
       productCache.set(cacheKey, {
@@ -159,7 +216,7 @@ export function useProduct(id: string) {
     }
 
     try {
-      const foundProduct = ProductService.getProductById(id)
+      const foundProduct = sampleProducts.find(product => product.id === id)
       
       if (!foundProduct) {
         setError('Product not found')
@@ -175,7 +232,9 @@ export function useProduct(id: string) {
       if (cachedRelated && isCacheValid(cachedRelated.timestamp)) {
         related = cachedRelated.data
       } else {
-        related = ProductService.getRelatedProducts(id)
+        related = sampleProducts
+          .filter(p => p.id !== id && p.category === foundProduct.category)
+          .slice(0, 4)
         productCache.set(relatedCacheKey, {
           data: related,
           timestamp: Date.now()
@@ -223,7 +282,14 @@ export function useProductSearch(initialQuery = "") {
     setLoading(true)
     
     try {
-      const searchResults = ProductService.searchProducts(debouncedQuery)
+      const searchResults = sampleProducts.filter(product => {
+        const searchTerm = debouncedQuery.toLowerCase()
+        return (
+          product.name.toLowerCase().includes(searchTerm) ||
+          product.description.toLowerCase().includes(searchTerm) ||
+          product.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+        )
+      })
       setResults(searchResults)
     } catch (error) {
       console.error('Search error:', error)

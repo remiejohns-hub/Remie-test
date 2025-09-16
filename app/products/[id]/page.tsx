@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 import { AddToCartDialog } from "@/components/products/add-to-cart-dialog"
 import { ProductCard } from "@/components/products/product-card-optimized"
 import { useToast } from "@/hooks/use-toast"
+import { ImageMagnifier } from "@/components/ui/image-magnifier"
 
 interface ProductDetailPageProps {
   params: Promise<{
@@ -147,10 +148,15 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             {/* Product Images */}
             <div className="space-y-4">
               <div className="max-w-2xl mx-auto aspect-square bg-muted/20 rounded-lg overflow-hidden">
-                <img
+                <ImageMagnifier
                   src={product.images[selectedImageIndex] || "/placeholder.svg"}
                   alt={product.name}
-                  className="w-full h-full object-contain"
+                  width={600}
+                  height={600}
+                  magnifierSize={180}
+                  zoomLevel={4}
+                  className="w-full h-full"
+                  imageClassName="w-full h-full object-contain"
                 />
               </div>
               <div className="flex gap-2 overflow-x-auto">

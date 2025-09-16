@@ -1,80 +1,97 @@
 import type { Product, ProductFilters, ProductCategory } from "@/lib/types/product"
 import { sampleProducts, productCategories } from "@/lib/data/products"
+import { DatabaseProductService } from "./database-product-service"
 
 export class ProductService {
   private static products: Product[] = sampleProducts
   private static categories: ProductCategory[] = productCategories
 
   // Get all products with optional filtering
-  static getProducts(filters?: ProductFilters): Product[] {
-    let filteredProducts = [...this.products]
+  static async getProducts(filters?: ProductFilters): Promise<Product[]> {
+    try {
+      return await DatabaseProductService.getProducts(filters)
+    } catch (error) {
+      console.error('Database error, falling back to static data:', error)
+      // Fallback to static data if database fails
+      let filteredProducts = [...this.products]
 
-    if (filters) {
-      if (filters.category) {
-        filteredProducts = filteredProducts.filter((product) => product.category === filters.category)
+      if (filters) {
+        if (filters.category) {
+          filteredProducts = filteredProducts.filter((product) => product.category === filters.category)
+        }
+
+        if (filters.subcategory) {
+          filteredProducts = filteredProducts.filter((product) => product.subcategory === filters.subcategory)
+        }
+
+        if (filters.minPrice !== undefined) {
+          filteredProducts = filteredProducts.filter((product) => product.price >= filters.minPrice!)
+        }
+
+        if (filters.maxPrice !== undefined) {
+          filteredProducts = filteredProducts.filter((product) => product.price <= filters.maxPrice!)
+        }
+
+        if (filters.inStock !== undefined) {
+          filteredProducts = filteredProducts.filter((product) => product.inStock === filters.inStock)
+        }
+
+        if (filters.featured !== undefined) {
+          filteredProducts = filteredProducts.filter((product) => product.featured === filters.featured)
+        }
+
+        if (filters.tags && filters.tags.length > 0) {
+          filteredProducts = filteredProducts.filter((product) => filters.tags!.some((tag) => product.tags.includes(tag)))
+        }
+
+        if (filters.search) {
+          const searchTerm = filters.search.toLowerCase()
+          filteredProducts = filteredProducts.filter(
+            (product) =>
+              product.name.toLowerCase().includes(searchTerm) ||
+              product.description.toLowerCase().includes(searchTerm) ||
+              product.tags.some((tag) => tag.toLowerCase().includes(searchTerm)),
+          )
+        }
       }
 
-      if (filters.subcategory) {
-        filteredProducts = filteredProducts.filter((product) => product.subcategory === filters.subcategory)
-      }
-
-      if (filters.minPrice !== undefined) {
-        filteredProducts = filteredProducts.filter((product) => product.price >= filters.minPrice!)
-      }
-
-      if (filters.maxPrice !== undefined) {
-        filteredProducts = filteredProducts.filter((product) => product.price <= filters.maxPrice!)
-      }
-
-      if (filters.inStock !== undefined) {
-        filteredProducts = filteredProducts.filter((product) => product.inStock === filters.inStock)
-      }
-
-      if (filters.featured !== undefined) {
-        filteredProducts = filteredProducts.filter((product) => product.featured === filters.featured)
-      }
-
-      if (filters.tags && filters.tags.length > 0) {
-        filteredProducts = filteredProducts.filter((product) => filters.tags!.some((tag) => product.tags.includes(tag)))
-      }
-
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase()
-        filteredProducts = filteredProducts.filter(
-          (product) =>
-            product.name.toLowerCase().includes(searchTerm) ||
-            product.description.toLowerCase().includes(searchTerm) ||
-            product.tags.some((tag) => tag.toLowerCase().includes(searchTerm)),
-        )
-      }
+      return filteredProducts
     }
-
-    return filteredProducts
   }
 
   // Get featured products
-  static getFeaturedProducts(): Product[] {
-    return this.getProducts({ featured: true })
+  static async getFeaturedProducts(): Promise<Product[]> {
+    try {
+      return await DatabaseProductService.getFeaturedProducts()
+    } catch (error) {
+      console.error('Database error, falling back to static data:', error)
+      return this.getProducts({ featured: true })
+    }
   }
 
   // Get product by ID
-  static getProductById(id: string): Product | undefined {
-    return this.products.find((product) => product.id === id)
+  static async getProductById(id: string): Promise<Product | null> {
+    try {
+      return await DatabaseProductService.getProductById(id)
+    } catch (error) {
+      console.error('Database error, falling back to static data:', error)
+      return this.products.find((product) => product.id === id) || null
+    }
   }
 
   // Get products by category
-  static getProductsByCategory(categoryId: string): Product[] {
-    return this.getProducts({ category: categoryId })
+  static async getProductsByCategory(categoryId: string): Promise<Product[]> {
+    return await this.getProducts({ category: categoryId })
   }
 
   // Get products by subcategory
-  static getProductsBySubcategory(subcategoryId: string): Product[] {
-    return this.getProducts({ subcategory: subcategoryId })
+  static async getProductsBySubcategory(subcategoryId: string): Promise<Product[]> {
+    return await this.getProducts({ subcategory: subcategoryId })
   }
 
   // Search products
-  static searchProducts(query: string): Product[] {
-    return this.getProducts({ search: query })
+  static async searchProducts(query: string): Promise<Product[]> {
+    return await this.getProducts({ search: query })
   }
 
   // Get all categories
@@ -119,6 +136,12 @@ export class ProductService {
     products: Product[],
     sortBy: "popular" | "newest" | "top-sales" | "price-low" | "price-high",
   ): Product[] {
+    // Safety check to ensure products is an array
+    if (!Array.isArray(products)) {
+      console.warn('ProductService.sortProducts: products is not an array:', products)
+      return []
+    }
+    
     const sortedProducts = [...products]
 
     switch (sortBy) {

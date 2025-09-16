@@ -11,6 +11,7 @@ import { useApp } from "@/lib/context/app-context"
 import type { Product } from "@/lib/types/product"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { ImageMagnifier } from "@/components/ui/image-magnifier"
 
 interface ProductCardProps {
   product: Product
@@ -65,24 +66,27 @@ export function ProductCard({
           "p-0 h-full flex flex-col",
           isFeatured && "space-y-4"
         )}>
-          {/* Image Section */}
+          {/* Image Section with Magnifier */}
           <div className={cn(
             "relative aspect-square overflow-hidden bg-muted/20",
             isFeatured && "rounded-t-lg"
           )}>
-            <Image
+            <ImageMagnifier
               src={product.images[0] || "/placeholder.svg"}
               alt={product.name}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              width={400}
+              height={400}
+              magnifierSize={120}
+              zoomLevel={3}
+              className="w-full h-full"
+              imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
             />
             
             {/* Sale Badge */}
             {product.originalPrice && product.originalPrice > product.price && (
               <Badge 
                 variant="secondary" 
-                className="absolute top-2 right-2 bg-red-500 text-white hover:bg-red-600"
+                className="absolute top-2 right-2 z-30 bg-red-500 text-white hover:bg-red-600"
               >
                 {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
               </Badge>

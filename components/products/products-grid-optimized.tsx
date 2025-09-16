@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Grid3X3, List, Grid, Filter, Search, RefreshCw, Home, RotateCcw, Lightbulb } from "lucide-react"
 import { useApp } from "@/lib/context/app-context-optimized"
-import { ProductService } from "@/lib/services/product-service"
+import { ApiProductService } from "@/lib/services/api-product-service"
+import { sampleProducts } from "@/lib/data/products"
 import type { Product } from "@/lib/types/product"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -40,7 +41,9 @@ const ProductsGrid = React.memo(function ProductsGrid({
   const [sortBy, setSortBy] = useState<"popular" | "newest" | "top-sales" | "price-low">("popular")
 
   const sortedProducts = useMemo(() => {
-    return ProductService.sortProducts(products, sortBy)
+    // Ensure products is always an array
+    const safeProducts = Array.isArray(products) ? products : []
+    return ApiProductService.sortProducts(safeProducts, sortBy)
   }, [products, sortBy])
 
   const handleSortChange = useCallback((value: string) => {
@@ -77,9 +80,9 @@ const ProductsGrid = React.memo(function ProductsGrid({
 
   // Get search suggestions
   const searchSuggestions = useMemo(() => {
-    const allProducts = ProductService.getProducts({})
-    const categories = [...new Set(allProducts.map(p => p.category))]
-    const tags = [...new Set(allProducts.flatMap(p => p.tags))].slice(0, 8)
+    // Use static data for search suggestions to avoid async issues in useMemo
+    const categories = [...new Set(sampleProducts.map(p => p.category))]
+    const tags = [...new Set(sampleProducts.flatMap(p => p.tags))].slice(0, 8)
     return { categories, tags }
   }, [])
 
@@ -387,7 +390,7 @@ export function ProductsPage() {
       setLoading(true)
       try {
         // Remove artificial delay - load products immediately
-        let filteredProducts = ProductService.getProducts(filters)
+        let filteredProducts = await ApiProductService.getProducts(filters)
         
         // Apply search filter if search term exists
         if (searchTerm.trim()) {
