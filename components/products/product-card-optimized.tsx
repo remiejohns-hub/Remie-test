@@ -1,8 +1,8 @@
 "use client"
 
 import React, { memo, useCallback } from "react"
-import Image from "next/image"
 import Link from "next/link"
+import { ProductImage } from "@/components/ui/optimized-image"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -95,12 +95,10 @@ const ProductCard = memo(function ProductCard({
             "relative aspect-square overflow-hidden bg-muted/20",
             isFeatured && "rounded-t-lg"
           )}>
-            <Image
+            <ProductImage
               src={product.images[0] || "/placeholder.svg"}
               alt={product.name}
-              fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               priority={isFeatured}
             />
             
